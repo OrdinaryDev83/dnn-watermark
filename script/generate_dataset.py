@@ -13,6 +13,9 @@ from PIL import Image, ImageDraw, ImageFont
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm, trange
 
+if os.path.exists(os.path.join("data", "dataset")):
+    shutil.rmtree(os.path.join("data", "dataset"))
+
 flist = fm.findSystemFonts()
 names = [
     fm.FontProperties(fname=fname).get_file().split("\\")[-1].lower() for fname in flist
@@ -145,17 +148,18 @@ def save_data(
     filename: str,
     label: str,
     split: str,
-    zip: bool = False,
 ) -> None:
     print(f"Saving {split} data...")
     origin_path = os.path.join("data", "dataset", split)
 
-    if os.path.exists(origin_path):
-        shutil.rmtree(origin_path)
-    os.makedirs(origin_path)
-    #os.makedirs(os.path.join(origin_path, "images"))
-    #os.makedirs(os.path.join(origin_path, "labels"))
+    if not os.path.exists(origin_path):
+        os.makedirs(origin_path)
+    
     jsonl = ""
+    if os.path.exists(os.path.join(origin_path, "metadata.jsonl")):
+        with open(os.path.join(origin_path, "metadata.jsonl"), "r") as f:
+            jsonl = f.read()
+    
     for i in trange(len(X_data)):
         img = Image.fromarray(X_data[i])
         img_filename = filename + "_" + split + "_" + str(i) + ".jpg"
@@ -175,12 +179,11 @@ def save_data(
 
     with open(os.path.join(origin_path, "metadata.jsonl"), "w") as f:
         f.write(jsonl)
-    if zip:
-        shutil.make_archive(origin_path, "zip", origin_path)
+    
 
 
-save_data(X_train, y_train, y_data_bbox, "watermarked", "text", "train", zip=True)
-save_data(X_val, y_val, y_data_bbox, "watermarked", "text", "val", zip=True)
+save_data(X_train, y_train, y_data_bbox, "watermarked", "text", "train")
+save_data(X_val, y_val, y_data_bbox, "watermarked", "text", "val")
 
 logos = []
 for filename in os.listdir(os.path.join("data", "logos")):
@@ -305,8 +308,17 @@ X_logos_train, X_logos_val, y_logos_train, y_logos_val = train_test_split(
 )
 
 save_data(
-    X_logos_train, y_logos_train, y_logos_bbox, "watermarked", "logo", "train", zip=True
+    X_logos_train, y_logos_train, y_logos_bbox, "watermarked", "logo", "train"
 )
 save_data(
-    X_logos_val, y_logos_val, y_logos_bbox, "watermarked", "logo", "val", zip=True
+    X_logos_val, y_logos_val, y_logos_bbox, "watermarked", "logo", "val"
 )
+
+ZIP = True
+SPLITS = ["train", "val"]
+
+if ZIP:
+    for split in SPLITS:
+        origin_path = os.path.join("data", "dataset", split)
+        shutil.make_archive(origin_path, "zip", origin_path)
+        shutil.rmtree(origin_path)
