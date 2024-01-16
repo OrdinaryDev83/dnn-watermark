@@ -162,7 +162,7 @@ def save_data(
     
     for i in trange(len(X_data)):
         img = Image.fromarray(X_data[i])
-        img_filename = filename + "_" + split + "_" + str(i) + ".jpg"
+        img_filename = filename + "_" + label + "_" + split + "_" + str(i) + ".jpg"
         img_path = os.path.join(origin_path, img_filename)
         img.save(img_path)
         bbox_list = []
