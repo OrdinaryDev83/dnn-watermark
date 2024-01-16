@@ -27,10 +27,10 @@ print(f"Loaded {len(names)} fonts")
 path_pictures = os.path.join("data", "pictures")
 
 data = []
-for filename in os.listdir(path_pictures):
+for k, filename in enumerate(os.listdir(path_pictures)):
     img = Image.open(os.path.join(path_pictures, filename))
-    data.append(img)
-
+    data.append(img.copy())
+    img.close()
 
 def add_text_watermark(img, txt: str, position: tuple, color: tuple, fontname: str, orientation: int, size: int) -> tuple:
     new_img = img.copy().convert("RGBA")
@@ -72,7 +72,11 @@ def add_random_text_watermark(img: Image.Image) -> Image.Image:
     fontname: str = np.random.choice(names)
     orientation: int = np.random.choice([0, 90, 180, 270])
     size: int = np.random.randint(5, min(w, h) // 3)
-    return add_text_watermark(img, txt, position, color, fontname, orientation, size)
+    try:
+        # it may fail if some characters from txt are not supported by the font
+        return add_text_watermark(img, txt, position, color, fontname, orientation, size)
+    except Exception:
+        return img, None, None
 
 
 def add_random_text_watermarks(img: Image.Image, k: int) -> tuple:
@@ -83,9 +87,9 @@ def add_random_text_watermarks(img: Image.Image, k: int) -> tuple:
     labels: list = []
     while k > 0:
         watermark_image, txt_image, bbox = add_random_text_watermark(watermark_image)
-        total_txt_image = Image.alpha_composite(total_txt_image, txt_image)
         if bbox is None:
             continue
+        total_txt_image = Image.alpha_composite(total_txt_image, txt_image)
         bboxes.append(bbox)
         labels.append("text")
         k -= 1
@@ -139,50 +143,38 @@ def save_data(
     y_data: List[List[str]],
     y_data_bbox: List[List[List[float]]],
     filename: str,
-    sub_folder: str,
-    sub_sub_folder: str,
+    label: str,
+    split: str,
     zip: bool = False,
 ) -> None:
-    print(f"Saving {sub_sub_folder} data...")
-    origin_path = os.path.join("data", "dataset", sub_folder, sub_sub_folder)
+    print(f"Saving {split} data...")
+    origin_path = os.path.join("data", "dataset", split)
 
     if os.path.exists(origin_path):
         shutil.rmtree(origin_path)
     os.makedirs(origin_path)
-    os.makedirs(os.path.join(origin_path, "images"))
-    os.makedirs(os.path.join(origin_path, "labels"))
-
+    #os.makedirs(os.path.join(origin_path, "images"))
+    #os.makedirs(os.path.join(origin_path, "labels"))
+    jsonl = ""
     for i in trange(len(X_data)):
         img = Image.fromarray(X_data[i])
-        img.save(
-            os.path.join(origin_path,
-                "images",
-                filename + "_" + sub_sub_folder + "_" + str(i) + ".jpg",
-            )
-        )
-        with open(
-            os.path.join(origin_path,
-                "labels",
-                filename + "_" + sub_sub_folder + "_" + str(i) + ".json",
-            ),
-            "w",
-        ) as f:
-            json_list = []
-            for j in range(len(y_data_bbox[i])):
-                bbox = y_data_bbox[i][j]
-                json_list.append(
-                    {
-                        "label": y_data_labels[i][j],
-                        "bbox": [
+        img_filename = filename + "_" + split + "_" + str(i) + ".jpg"
+        img_path = os.path.join(origin_path, img_filename)
+        img.save(img_path)
+        bbox_list = []
+        for j in range(len(y_data_bbox[i])):
+            bbox = y_data_bbox[i][j]
+            bbox_list.append([
                             int(bbox[0]),
                             int(bbox[1]),
                             int(bbox[2]),
                             int(bbox[3]),
-                        ],
-                    }
-                )
-            json.dump(json_list, f)
+                        ])
+        json_dict = {"file_name": img_filename, "label": label, "bbox": bbox_list}
+        jsonl += json.dumps(json_dict) + "\n"
 
+    with open(os.path.join(origin_path, "metadata.jsonl"), "w") as f:
+        f.write(jsonl)
     if zip:
         shutil.make_archive(origin_path, "zip", origin_path)
 
@@ -190,11 +182,11 @@ def save_data(
 save_data(X_train, y_train, y_data_bbox, "watermarked", "text", "train", zip=True)
 save_data(X_val, y_val, y_data_bbox, "watermarked", "text", "val", zip=True)
 
-
 logos = []
 for filename in os.listdir(os.path.join("data", "logos")):
     img = Image.open(os.path.join("data", "logos", filename))
-    logos.append(img)
+    logos.append(img.copy())
+    img.close()
 
 
 def remove_background(img: Image.Image) -> Image.Image:
