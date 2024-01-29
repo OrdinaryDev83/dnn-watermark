@@ -1,10 +1,12 @@
 import os
 import random
 import string
+import cv2
 from typing import List, Tuple
 
 import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
@@ -20,7 +22,7 @@ def load_fonts() -> List[str]:
     flist = fm.findSystemFonts()
 
     font_names = [
-        fm.FontProperties(fname=fname).get_file().split("\\")[-1].lower()
+        fm.FontProperties(fname=fname).get_file().split("\\")[-1]
         for fname in flist
     ]
 
@@ -104,29 +106,39 @@ def _get_rotation_from_position(position: dict) -> int:
         rotations = [0]
     return 0  # np.random.choice(rotations)
 
+def _get_alpha_from_rotation_and_position(position: dict, rotation: int) -> int:
+    """
+    Returns a random alpha value for the watermark
+
+    Args:
+        position (dict): The position of the watermark
+        rotation (int): The rotation angle
+    
+    Returns:
+        int: The alpha value
+    """
+    possible_alpha_ranges =[
+        (255 * 0.3, 255 * 0.6),
+        (255 * 0.8, 255),
+    ]
+    pos_key = list(position.keys())[0]
+    if pos_key in ["top_left", "top_right", "bottom_left", "bottom_right"] and rotation in [0, 180]:
+        alpha_range = possible_alpha_ranges[1]
+    else:
+        alpha_range = possible_alpha_ranges[0]
+
+    return np.random.randint(alpha_range[0], alpha_range[1])
+
 
 def _get_color_from_rotation_and_position(position: dict, rotation: int) -> tuple:
     """
     Returns a random color
     """
-    possible_alpha_ranges = [
-        (255 * 0.25, 255 * 0.6),
-        (255 * 0.75, 255),
-    ]
-    if position in [
-        "top_left",
-        "top_right",
-        "bottom_left",
-        "bottom_right",
-    ] and rotation in [0, 180]:
-        alpha_range = possible_alpha_ranges[1]
-    else:
-        alpha_range = possible_alpha_ranges[0]
     return (
         np.random.randint(0, 255),
         np.random.randint(0, 255),
         np.random.randint(0, 255),
-        np.random.randint(alpha_range[0], alpha_range[1]),
+        _get_alpha_from_rotation_and_position(position, rotation),
     )
 
 
@@ -207,14 +219,22 @@ def resize_image_bbox(img, bboxes):
     return img.resize((224, 224)), bboxes
 
 
-def plot_watermark(img, txt_img):
+def plot_watermark(img, bbox=None):
     """
-    Plot the image with the watermark
+    Plot the image with the watermark and the bounding box
     """
-    total_txt_image = Image.alpha_composite(img, txt_img)
-
     fig, ax = plt.subplots(1)
-    ax.imshow(total_txt_image)
+    ax.imshow(img)
+    if bbox is not None:
+        rect = patches.Rectangle(
+            (bbox[0], bbox[1]),
+            bbox[2] - bbox[0],
+            bbox[3] - bbox[1],
+            linewidth=1,
+            edgecolor="r",
+            facecolor="none",
+        )
+    ax.add_patch(rect)
     plt.show()
 
 
@@ -233,6 +253,91 @@ def generate_text_watermarks():
     X, y = np.array(X), np.array(y)
     return X, y
 
+def remove_background(img: Image.Image):
+    img = np.array(img)
+    if len(img.shape) == 3:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    else: # if logo is already grayscale
+        gray = img
+    # threshold input image as mask
+    mask = cv2.threshold(gray, 250, 255, cv2.THRESH_BINARY)[1]
+    # negate mask
+    mask = 255 - mask
+    # apply morphology to remove isolated extraneous noise
+    # use borderconstant of black since foreground touches the edges
+    kernel = np.ones((3,3), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    # anti-alias the mask -- blur then stretch
+    # blur alpha channel
+    mask = cv2.GaussianBlur(mask, (0,0), sigmaX=2, sigmaY=2, borderType = cv2.BORDER_DEFAULT)
+    # linear stretch so that 127.5 goes to 0, but 255 stays 255
+    mask = (2*(mask.astype(np.float32))-255.0).clip(0,255).astype(np.uint8)
+    # put mask into alpha channel
+    result = img.copy()
+    result = cv2.cvtColor(result, cv2.COLOR_BGR2BGRA)
+    result[:, :, 3] = mask
+    return Image.fromarray(result, 'RGBA')
+
+def _get_position_for_logo(img_width: int, img_height: int, logo_height: int, logo_width: int) -> tuple:
+    """
+    Returns a position between:
+    - top left
+    - top right
+    - bottom left
+    - bottom right
+    - middle
+    With a padding of 10% of the image size
+    """
+    padding = 0.05
+    positions = [
+        {"top_left": (img_width * padding, img_height * padding)},  # top left
+        {"top_right": (img_width * (1 - padding) - logo_width, img_height * padding)},  # top right
+        {"bottom_left": (img_width * padding, img_height * (1 - padding) - logo_height)},  # bottom left
+        {"bottom_right": (img_width * (1 - padding) - logo_width, img_height * (1 - padding) - logo_height)},  # bottom right
+        {"middle": (img_width // 2 - logo_width // 2, img_height // 2 - logo_height // 2)}  # middle
+    ]
+    return np.random.choice(positions)
+
+def add_logo_watermark(img: Image.Image, logo: Image.Image) -> tuple:
+    """
+    Main to function to add logo watermark to an image
+    Args:
+        img (Image.Image): image to add watermark to
+        logo (Image.Image): logo to add
+    Returns:
+        tuple: combined image, logo bbox, category
+    """
+    w, h = img.size
+    logo = remove_background(logo)
+    max_logo_size = np.random.uniform(0.3, 0.6)
+    scale_factor: int = (
+        max_logo_size
+        / max(logo.width, logo.height)
+        * min(img.width, img.height)
+    )
+    logo_resized = logo.resize(
+        (int(logo.width * scale_factor), int(logo.height * scale_factor))
+    )
+    position: dict = _get_position_for_logo(w, h, logo_resized.height, logo_resized.width)
+    rotation: int = _get_rotation_from_position(position)
+    position_values = position[list(position.keys())[0]]
+    position_values = int(position_values[0]), int(position_values[1])
+    alpha = _get_alpha_from_rotation_and_position(position, rotation)
+    
+    logo_resized = logo_resized.rotate(rotation)
+    logo_resized = np.array(logo_resized)
+    logo_resized[:, :, 3] *= alpha
+    logo_resized = Image.fromarray(logo_resized, "RGBA")
+
+    logo_transformed = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    logo_transformed.paste(logo_resized, position_values)
+    bbox = logo_resized.getbbox()
+    bbox = (*position_values, position_values[0] + bbox[2], position_values[1] + bbox[3])
+    
+    new_img = img.copy().convert("RGBA")
+    combined = Image.alpha_composite(new_img, logo_transformed)
+    return combined, bbox, 2
 
 # if __name__ == "__main__":
 #     # pos = _get_position(100, 100)
@@ -244,4 +349,5 @@ def generate_text_watermarks():
 #     fonts = load_fonts()
 #     img = Image.open("data/pictures/000000000139.jpg")
 #     combined, txt_img, bbox = add_text_watermark(img, fonts[0])
-#     plot_watermark(combined, txt_img)
+#     combined, bbox, _ = add_logo_watermark(img, Image.open("data/logos/amazon.jpg"))
+#     plot_watermark(combined, bbox)
