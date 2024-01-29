@@ -6,3 +6,5 @@ transformers
 scikit-learn
 tqdm
 pillow
+click==8.1.7 
+torch==2.1.2 
