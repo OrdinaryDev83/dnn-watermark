@@ -88,6 +88,7 @@ def download_images(
     n_jobs: int = os.cpu_count() if n_jobs == -1 else n_jobs
     images_per_job: int = len(images) // n_jobs
 
+    # Multiple threads
     threads = []
     for i in range(n_jobs):
         start_index = i * images_per_job

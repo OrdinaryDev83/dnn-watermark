@@ -12,6 +12,7 @@ from typing import Dict, List
 from pycocotools.coco import COCO
 from utils.watermarks_generator import add_text_watermark, load_fonts
 from utils.download_dataset import download_images
+from PIL import Image
 
 
 @dataclass
@@ -100,7 +101,6 @@ def generate_categories(output_annotations_file: str) -> None:
     with open(output_annotations_file, "a") as f:
         json.dump(categories, f)
 
-
 def write_annotations(
     coco_api: COCO,
     dataset_directory: str,
@@ -119,28 +119,33 @@ def write_annotations(
         end_index (int): The end index of the images.
     """
     images: List[int] = coco_api.getImgIds()[start_index:end_index]
-    download_images(coco_api, dataset_directory, images)
     
-
     font_names: List[str] = load_fonts()
 
-    # with open(output_file, "a") as f:
-    #     for idx, image in enumerate(images):
-    #         image = coco_api.loadImgs(image)[0]
+    with open(f"{dataset_directory}/{output_file}", "a") as f:
+        for idx, image in enumerate(images):
+            image = coco_api.loadImgs(image)[0]
+            
+            # check if image exists
+            if not os.path.exists(os.path.join(dataset_directory, image["file_name"])):
+                raise FileNotFoundError(
+                    f"Image {image['file_name']} not found in {dataset_directory}."
+                )
+    
+            img : Image = Image.open(os.path.join(dataset_directory, image["file_name"]))
+            font_path: str = font_names[idx % len(font_names)]
+            image_watermarked, bbox, category = add_text_watermark(img, font_path)
 
-    #         font_name: str = font_names[idx % len(font_names)]
-    #         image_watermarked, bbox, category = add_text_watermark(image, font_name)
+            anotation = Annotation(
+                file_name=image["file_name"],
+                bbox=bbox,
+                id=0,
+                area=bbox[2] * bbox[3],
+                image_id=image["id"],
+                category_id=category,
+            )
 
-    #         anotation = Annotation(
-    #             file_name=image["file_name"],
-    #             bbox=bbox,
-    #             id=0,
-    #             area=bbox[2] * bbox[3],
-    #             image_id=image["id"],
-    #             category_id=category,
-    #         )
-
-    #         json.dump(anotation, f, cls=AnnotationEncoder)
+            json.dump(anotation, f, cls=AnnotationEncoder)
 
 
 def zip_dataset() -> None:
@@ -163,6 +168,9 @@ def generate_dataset(
         annotations_file (str): The annotations file to generate the dataset from.
     """
     coco_api: COCO = COCO(annotations_file)
+    # download images from coco dataset
+    images: List[int] = coco_api.getImgIds()[:size]
+    download_images(coco_api, dataset_directory, images)
 
     # create directory if it doesn't exist recursively
     if not os.path.exists(dataset_directory):
@@ -176,10 +184,3 @@ def generate_dataset(
         start_index=0,
         end_index=size,
     )
-
-
-from utils.download_dataset import download_annotations
-
-# print(download_annotations("http://images.cocodataset.org/annotations/image_info_unlabeled2017.zip"))
-generate_dataset(annotations_file="data/annotations/image_info_unlabeled2017.json")
-# generate_categories("data/annotations/categories.json")j
