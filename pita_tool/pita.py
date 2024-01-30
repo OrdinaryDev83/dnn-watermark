@@ -7,14 +7,19 @@ import zipfile
 
 import click
 import wget
-from datasets import load_dataset
-from huggingface_hub import HfFolder
 
-from dataset_generation import PitaDataset, generate_dataset
+from pita_dataset import (
+    HfPitaRepository,
+    PitaDataset,
+    create_pita_repository,
+    generate_dataset,
+    push_to_hugging_face,
+    set_hugging_face_token,
+)
 
 
 @click.group()
-def pita():
+def pita() -> None:
     """A CLI for the to generata and download pita dataset watermark object detection dataset."""
     pass
 
@@ -26,7 +31,7 @@ def pita():
 @click.option(
     "--data_dir",
     "-d",
-    default="pita_dataset",
+    default="output_dataset",
     help="The directory of the dataset.",
     type=str,
 )
@@ -41,7 +46,8 @@ def download(split: str, data_dir: str) -> None:
 
     # Check if the split is valid
     if split not in ["train", "validation", "test"]:
-        raise ValueError("The split must be one of 'train', 'validation' or 'test'.")
+        click.echo(f"The split {split} is not valid.")
+        return
 
     # Download the dataset
     train_dataset = f"https://huggingface.co/datasets/bastienp/visible-watermark-pita/resolve/main/data/{split}.zip?download=true"
@@ -64,27 +70,36 @@ def download(split: str, data_dir: str) -> None:
     type=str,
 )
 @click.option("--split", default="train", help="The split of the dataset.", type=str)
-@click.option("--size", default=20_000, help="The size of the dataset.", type=int)
-@click.option("--hf", default=False, help="Push the dataset to HuggingFace.", type=bool)
-def generate(dataset_directory: str, split: str, size: int, hf: bool) -> None:
+@click.option("-s", "--size", default=20_000, help="The size of the dataset.", type=int)
+@click.option(
+    "-p",
+    "--push_to_hub",
+    default=False,
+    is_flag=True,
+    help="Push the dataset to HuggingFace.",
+)
+def generate(dataset_directory: str, split: str, size: int, push_to_hub: bool) -> None:
     """Generate the pita dataset from COCO and logos from QMUL-OpenLogo."""
     click.echo("Generating the pita dataset ...")
 
-    if hf:
-        hf_token = click.prompt("Please enter your HuggingFace token", hide_input=True, type=str)
-        HfFolder.save_token(hf_token)
+    # Create the dataset directory if it does not exist
+    if push_to_hub:
+        set_hugging_face_token()
+        hf_repository = create_pita_repository(
+            dataset_directory=dataset_directory
+        )
 
-    # Create the data directory if it does not exist
+    # Dataset configuration
     pita_dataset: PitaDataset = PitaDataset(
         dataset_directory=dataset_directory,
         split=split,
         size=size,
     )
 
-    generate_dataset(pita_dataset)
+    generate_dataset(dataset=pita_dataset)
 
-    pita_dataset.zip_dataset()
-        
+    if push_to_hub:
+        push_to_hugging_face(hf_repository=hf_repository)
 
 
 if __name__ == "__main__":
