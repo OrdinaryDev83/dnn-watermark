@@ -177,3 +177,5 @@ def generate_dataset(dataset: PitaDataset) -> None:
             os.remove(dataset.get_metadata_path())
 
         generate_labels(coco_api, dataset, image_directory, logo_directory)
+
+        dataset.zip_dataset()

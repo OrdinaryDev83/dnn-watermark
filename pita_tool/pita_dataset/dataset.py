@@ -4,6 +4,7 @@ PitaDataset class
 
 import os
 from pathlib import Path
+from shutil import rmtree
 from zipfile import ZipFile
 
 
@@ -80,3 +81,6 @@ class PitaDataset:
         with ZipFile(str(self.get_path()) + ".zip", "w") as zip:
             for file in os.listdir(self.get_path()):
                 zip.write(self.get_path() / file, file)
+
+        # remove the unzipped directory
+        rmtree(self.get_path())
