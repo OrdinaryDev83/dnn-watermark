@@ -25,8 +25,8 @@ def load_fonts() -> List[str]:
     flist = fm.findSystemFonts()
 
     font_names = [
-        fm.FontProperties(fname=fname).get_file().split("\\")[-1]
-        for fname in flist  # pyre-ignore[16]
+        fm.FontProperties(fname=fname).get_file().split("\\")[-1]  # pyre-ignore[16]
+        for fname in flist
     ]
 
     return font_names
@@ -180,7 +180,7 @@ def get_direction_anchor_from_position(position: dict) -> Tuple[str, str]:
 
 def add_text_watermark(
     img: Image.Image, font_name: str
-) -> Tuple[Image.Image, tuple, int]:
+) -> Tuple[Image.Image, tuple | None, int]:
     """
     Add a text watermark to an image
 
@@ -215,8 +215,6 @@ def add_text_watermark(
     combined = Image.alpha_composite(new_img, txt_new_img)
 
     bbox = txt_new_img.getbbox()
-    if bbox is None:
-        bbox = (0, 0, 0, 0)
     return combined, bbox, 0
 
 
@@ -359,16 +357,17 @@ def add_logo_watermark(img: Image.Image, logo: Image.Image) -> tuple:
     logo_transformed = Image.new("RGBA", img.size, (0, 0, 0, 0))
     logo_transformed.paste(logo_resized, position_values)
     bbox = logo_resized.getbbox()
+
+    new_img = img.copy().convert("RGBA")
+    combined = Image.alpha_composite(new_img, logo_transformed)
+
     if bbox is None:
-        bbox = (0, 0, 0, 0)
+        return combined, None, 1
     bbox = (
         *position_values,
         position_values[0] + bbox[2],
         position_values[1] + bbox[3],
     )
-
-    new_img = img.copy().convert("RGBA")
-    combined = Image.alpha_composite(new_img, logo_transformed)
     return combined, bbox, 1
 
 
