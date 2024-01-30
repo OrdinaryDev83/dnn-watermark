@@ -10,10 +10,14 @@ description = "Download a benchmark dataset for visible watermark detection"
 readme = "README.md"
 keywords = ["watermark", "dataset", "object-detection"]
 dependencies = [
+    "numpy==1.26.3", 
+    "matplotlib==3.8.2", 
+    "pillow==10.2.0", 
+    "torch==2.1.2", 
     "wget==3.2",
     "pycocotools==2.0.7",
-    "opencv-python==4.9.0.80",
-    "pillow==10.2.0"
+    "opencv-python==4.9.0.80", 
+    "datasets==2.16.1" 
 ]
 
 [project.optional-dependencies]
