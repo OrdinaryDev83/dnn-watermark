@@ -13,6 +13,7 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+from .utils import resize_image
 
 
 def load_fonts() -> List[str]:
@@ -192,6 +193,8 @@ def add_text_watermark(
         tuple: The image with the watermark, the bbox, the category
 
     """
+    
+    img = resize_image(img, 512, 512)
     w, h = img.size
 
     txt: str = generate_random_string(np.random.randint(8, 15))
@@ -215,7 +218,7 @@ def add_text_watermark(
     combined = Image.alpha_composite(new_img, txt_new_img)
 
     bbox = txt_new_img.getbbox()
-    return combined, bbox, 2
+    return combined.convert('RGB'), bbox, 2
 
 
 def resize_image_bbox(img, bboxes):
@@ -332,7 +335,10 @@ def add_logo_watermark(img: Image.Image, logo: Image.Image) -> tuple:
     Returns:
         tuple: combined image, logo bbox, category
     """
+ 
+    img = resize_image(img, 512, 512)
     w, h = img.size
+    
     logo = remove_background(logo)
     max_logo_size = np.random.uniform(0.3, 0.6)
     scale_factor: int = (
@@ -368,4 +374,4 @@ def add_logo_watermark(img: Image.Image, logo: Image.Image) -> tuple:
         position_values[0] + bbox[2],
         position_values[1] + bbox[3],
     )
-    return combined, bbox, 1
+    return combined.convert('RGB'), bbox, 1

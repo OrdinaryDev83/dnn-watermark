@@ -40,7 +40,7 @@ def generate_text_watermarked_image(
     image_pil: Image = Image.open(image_path)
     watermarked_image, bbox, category = add_text_watermark(image_pil, font)
 
-    return watermarked_image.convert("RGB"), bbox, category, image_properties
+    return watermarked_image, bbox, category, image_properties
 
 
 def generate_logo_watermarked_image(
@@ -68,7 +68,7 @@ def generate_logo_watermarked_image(
     logo_pil: Image = Image.open(logo_path)
     watermarked_image, bbox, category = add_logo_watermark(image_pil, logo_pil)
 
-    return watermarked_image.convert("RGB"), bbox, category, image_properties
+    return watermarked_image, bbox, category, image_properties
 
 
 def generate_labels(
