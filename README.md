@@ -44,3 +44,9 @@ We fine-tuned a YoloV8 and DETR model on the dataset we created.
 - Retina Net -> PyTorch
 - Mask R CNN -> PyTorch
 
+## TODO
+[ ] handle splits
+[ ] try catch bbox=None
+[ ] resize images
+[ ] add logo dataset
+
