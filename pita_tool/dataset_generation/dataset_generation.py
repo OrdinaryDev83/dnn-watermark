@@ -18,7 +18,7 @@ from .watermarks_generator import add_text_watermark, load_fonts
 from .utils import DisablePrint
 
 
-def generate_watermarked_text(
+def generate_text_watermarked_image(
     coco_api: COCO, idx: int, image_id: int, font: str, image_directory: str
 ) -> None:
     """
@@ -40,7 +40,7 @@ def generate_watermarked_text(
     return watermarked_image.convert("RGB"), bbox, category, image_properties
 
 
-def generate_dataset_anotations(
+def generate_text_labels(
     coco_api: COCO, dataset: PitaDataset, image_directory: str
 ) -> None:
     """
@@ -57,15 +57,22 @@ def generate_dataset_anotations(
         for idx, image_id in enumerate(dataset.image_ids):
             font = font_names[idx % len(font_names)]
 
-            # Generate a text watermarked image
-            (
-                watermarked_image,
-                bbox,
-                category,
-                image_properties,
-            ) = generate_watermarked_text(
-                coco_api, idx, image_id, font, image_directory
-            )
+            # Generate a text watermarked image and check no issues comming from fonts
+            try:
+                (
+                    watermarked_image,
+                    bbox,
+                    category,
+                    image_properties,
+                ) = generate_text_watermarked_image(
+                    coco_api, idx, image_id, font, image_directory
+                )
+            except OSError:
+                continue
+
+            # Text was not correctly added
+            if bbox is None:
+                continue
 
             # Create the annotation
             anotation = Annotation(
@@ -108,4 +115,4 @@ def generate_dataset(dataset: PitaDataset) -> None:
         image_directory: str = temporary_directory + "/images"
         download_images(coco_api, image_directory, dataset.image_ids)
 
-        generate_dataset_anotations(coco_api, dataset, image_directory)
+        generate_text_labels(coco_api, dataset, image_directory)
