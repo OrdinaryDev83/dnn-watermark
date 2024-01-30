@@ -172,4 +172,8 @@ def generate_dataset(dataset: PitaDataset) -> None:
         logo_directory: str = temporary_directory + "/logos/all/"
         download_logos(directory_path=temporary_directory)
 
+        # remove metadata file if it exists
+        if os.path.exists(dataset.get_metadata_path()):
+            os.remove(dataset.get_metadata_path())
+
         generate_labels(coco_api, dataset, image_directory, logo_directory)
