@@ -1,37 +1,27 @@
 """
 Download the dataset from the given URL and extract the images and annotations.
 """
-import os
-import sys
-import threading
 import zipfile
 from glob import glob
-from io import StringIO
-from pathlib import Path
 from typing import List
 
 import wget
 from pycocotools.coco import COCO
 
-
-class NoAnnotationsFileFound(Exception):
-    """Raised when no annotations are found."""
-
-    def __init__(self, message="No annotations found."):
-        self.message = message
-        super().__init__(self.message)
-
-
-class NullIO(StringIO):
-    """
-    A class that does nothing.
-    """
-
-    def write(self, txt):
-        pass
-
+from .exceptions import NoAnnotationsFileFound
+from .utils import DisablePrint
 
 def download_annotations(annotions_url: str, directory_path: str) -> str:
+    """
+    Download the annotations from the given URL and extract them.
+
+    Args:
+        annotions_url (str): The annotations URL.
+        directory_path (str): The directory path.
+    
+    Returns:
+        str: The path to the annotations file.
+    """
     zip_path = directory_path + "/anotations.zip"
 
     # Download the annotations and extract them
@@ -48,7 +38,7 @@ def download_annotations(annotions_url: str, directory_path: str) -> str:
     return annotations_json[0]
 
 
-def download_image(coco_api: COCO, dataset_directory: str, image_id: List[int]) -> None:
+def download_image(coco_api: COCO, dataset_directory: str, image_id: int) -> None:
     """
     Download one image.
 
@@ -57,13 +47,20 @@ def download_image(coco_api: COCO, dataset_directory: str, image_id: List[int]) 
         dataset_directory (str): The dataset directory.
         image_id (int): The image id.
     """
-    coco_api.download(dataset_directory, image_id)
+    coco_api.download(dataset_directory, [image_id])
 
 
-def download_images(
-    coco_api: COCO, dataset_directory: str, images: List[int], n_jobs: int = -1
-) -> None:
-    coco_api.download(dataset_directory, images)
+def download_images(coco_api: COCO, output_directory: str, images: List[int]) -> None:
+    """
+    Download multiple images.
+
+    Args:
+        coco_api (COCO): The coco api.
+        output_directory (str): The output directory.
+        images (List[int]): The images ids.
+    """
+    with DisablePrint():
+        coco_api.download(output_directory, images)
 
 
 # def download_images(
@@ -80,7 +77,6 @@ def download_images(
 
 #     # Download the images
 #     print("Downloading images...")
-#     sys.stdout: NullIO = NullIO()
 #     n_jobs: int = os.cpu_count() if n_jobs == -1 else n_jobs
 #     images_per_job: int = len(images) // n_jobs
 
@@ -103,5 +99,3 @@ def download_images(
 
 #     for thread in threads:
 #         thread.join()
-
-#     sys.stdout = sys.__stdout__

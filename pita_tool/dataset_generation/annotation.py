@@ -2,9 +2,8 @@
 Annotation class and encoder for coco format.
 """
 
-from dataclasses import dataclass
 from json import JSONEncoder
-from typing import List, Dict
+from typing import Dict, List
 
 
 class Annotation:
@@ -38,7 +37,7 @@ class Annotation:
             category_id={self.category_id},
         )
         """
-        
+
 
 class AnnotationEncoder(JSONEncoder):
     """

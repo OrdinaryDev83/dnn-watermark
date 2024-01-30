@@ -13,8 +13,9 @@ from pycocotools.coco import COCO
 
 from .annotation import Annotation, AnnotationEncoder
 from .dataset import PitaDataset
-from .utils.download_dataset import download_annotations
-from .utils.watermarks_generator import add_text_watermark, load_fonts
+from .download_dataset import download_annotations, download_images
+from .watermarks_generator import add_text_watermark, load_fonts
+from .utils import DisablePrint
 
 
 def generate_watermarked_text(
@@ -55,7 +56,7 @@ def generate_dataset_anotations(
     with open(dataset.get_metadata_path(), "a") as f:
         for idx, image_id in enumerate(dataset.image_ids):
             font = font_names[idx % len(font_names)]
-            
+
             # Generate a text watermarked image
             (
                 watermarked_image,
@@ -65,7 +66,6 @@ def generate_dataset_anotations(
             ) = generate_watermarked_text(
                 coco_api, idx, image_id, font, image_directory
             )
-
 
             # Create the annotation
             anotation = Annotation(
@@ -93,17 +93,19 @@ def generate_dataset(dataset: PitaDataset) -> None:
     if not os.path.exists(dataset_path):
         os.makedirs(dataset_path)
 
+    # download the annotations in a temporary directory
     with TemporaryDirectory() as temporary_directory:
         annotation_file: str = download_annotations(
             annotions_url=dataset.annotation_url, directory_path=temporary_directory
         )
 
-        coco_api: COCO = COCO(annotation_file)
+        with DisablePrint():
+            coco_api: COCO = COCO(annotation_file)
 
         dataset.image_ids = coco_api.getImgIds()[: dataset.size]
 
-        # TODO: remove
+        # Download images in a temporary directory
         image_directory: str = temporary_directory + "/images"
-        coco_api.download(image_directory, dataset.image_ids)
+        download_images(coco_api, image_directory, dataset.image_ids)
 
         generate_dataset_anotations(coco_api, dataset, image_directory)

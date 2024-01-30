@@ -1,7 +1,6 @@
 
 import click
-from dataset_generation.dataset import PitaDataset
-from dataset_generation.generate_dataset import generate_dataset
+from dataset_generation import PitaDataset, generate_dataset
 
 # @click.command()
 # @click.option(
@@ -48,24 +47,22 @@ def pita():
 def download() -> None:
     click.echo("Downloading the pita dataset ...")
 
+    
+
+
+@pita.command()
+def generate():
+    click.echo("Generating the pita dataset ...")
+
     pita_dataset : PitaDataset = PitaDataset(
         dataset_directory="data",
         split="train",
         size=2,
     )
 
-    # generate_dataset(
-    #     dataset_directory="data/train", annotations_file="data/annotations/image_info_unlabeled2017.json", output_file="metadata.jsonl", size=10
-    # )
-
     generate_dataset(pita_dataset)
 
     pita_dataset.zip_dataset()
-
-
-@pita.command()
-def generate():
-    click.echo("Dropped the database")
 
 
 if __name__ == "__main__":

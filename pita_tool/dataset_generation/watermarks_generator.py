@@ -1,3 +1,7 @@
+"""
+This script is used to generate watermarks for the dataset.
+"""
+
 import os
 import random
 import string
@@ -9,7 +13,6 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from tqdm import tqdm
 
 
 def load_fonts() -> List[str]:
@@ -22,7 +25,8 @@ def load_fonts() -> List[str]:
     flist = fm.findSystemFonts()
 
     font_names = [
-        fm.FontProperties(fname=fname).get_file().split("\\")[-1] for fname in flist  # pyre-ignore[16]
+        fm.FontProperties(fname=fname).get_file().split("\\")[-1]
+        for fname in flist  # pyre-ignore[16]
     ]
 
     return font_names
@@ -58,7 +62,9 @@ def generate_random_string(length: int) -> str:
     return result_str
 
 
-def _get_position(img_width: int, img_height: int, text_size: int) -> dict[str, Tuple[float, float]]:
+def _get_position(
+    img_width: int, img_height: int, text_size: int
+) -> dict[str, Tuple[float, float]]:
     """
     Returns a random position for the watermark
 
@@ -172,7 +178,9 @@ def get_direction_anchor_from_position(position: dict) -> Tuple[str, str]:
     return "ltr", "lt"
 
 
-def add_text_watermark(img: Image.Image, font_name: str) -> Tuple[Image.Image, tuple, int]:
+def add_text_watermark(
+    img: Image.Image, font_name: str
+) -> Tuple[Image.Image, tuple, int]:
     """
     Add a text watermark to an image
 
@@ -199,7 +207,9 @@ def add_text_watermark(img: Image.Image, font_name: str) -> Tuple[Image.Image, t
 
     draw = ImageDraw.Draw(txt_new_img)
     direction, anchor = get_direction_anchor_from_position(position)
-    draw.text(position_values, txt, fill=color, font=font, direction=direction, anchor=anchor)  # pyre-ignore[6]
+    draw.text(
+        position_values, txt, fill=color, font=font, direction=direction, anchor=anchor
+    )  # pyre-ignore[6]
 
     txt_new_img = txt_new_img.rotate(rotation)
     combined = Image.alpha_composite(new_img, txt_new_img)
