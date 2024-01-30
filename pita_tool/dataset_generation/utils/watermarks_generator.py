@@ -22,7 +22,7 @@ def load_fonts() -> List[str]:
     flist = fm.findSystemFonts()
 
     font_names = [
-        fm.FontProperties(fname=fname).get_file().split("\\")[-1] for fname in flist
+        fm.FontProperties(fname=fname).get_file().split("\\")[-1] for fname in flist  # pyre-ignore[16]
     ]
 
     return font_names
@@ -58,7 +58,7 @@ def generate_random_string(length: int) -> str:
     return result_str
 
 
-def _get_position(img_width: int, img_height: int, text_size: int) -> Tuple[int, int]:
+def _get_position(img_width: int, img_height: int, text_size: int) -> dict[str, Tuple[float, float]]:
     """
     Returns a random position for the watermark
 
@@ -147,7 +147,7 @@ def _get_color_from_rotation_and_position(position: dict, rotation: int) -> tupl
     )
 
 
-def get_direction_anchor_from_position(position: dict) -> str:
+def get_direction_anchor_from_position(position: dict) -> Tuple[str, str]:
     """
     Returns the direction and anchor for the text
 
@@ -169,9 +169,10 @@ def get_direction_anchor_from_position(position: dict) -> str:
         return "ltr", "rb"
     elif pos_key == "middle":
         return "ltr", "mm"
+    return "ltr", "lt"
 
 
-def add_text_watermark(img: Image.Image, font_name: str) -> Tuple:
+def add_text_watermark(img: Image.Image, font_name: str) -> Tuple[Image.Image, tuple, int]:
     """
     Add a text watermark to an image
 
@@ -180,7 +181,7 @@ def add_text_watermark(img: Image.Image, font_name: str) -> Tuple:
         font_name (str): The font name
 
     Returns:
-        tuple: The image with the watermark, the watermark image, the bounding box
+        tuple: The image with the watermark, the bbox, the category
 
     """
     w, h = img.size
@@ -190,33 +191,31 @@ def add_text_watermark(img: Image.Image, font_name: str) -> Tuple:
     position: dict = _get_position(w, h, size)
     rotation: int = _get_rotation_from_position(position)
     color: tuple = _get_color_from_rotation_and_position(position, rotation)
-    position_values = position[list(position.keys())[0]]
+    position_values: tuple[float, float] = position[list(position.keys())[0]]
     font = ImageFont.truetype(font_name, size=size)
 
     new_img = img.copy().convert("RGBA")
     txt_new_img = Image.new("RGBA", new_img.size, (255, 255, 255, 0))
-    txt_image = Image.new("RGBA", img.size, (255, 255, 255, 0))
-
-    draw = ImageDraw.Draw(txt_image)
-
-    dir, anchor = get_direction_anchor_from_position(position)
-    draw.text(position_values, txt, fill=color, font=font, direction=dir, anchor=anchor)
-    txt_image = txt_image.rotate(rotation)
 
     draw = ImageDraw.Draw(txt_new_img)
-    draw.text(position_values, txt, fill=color, font=font, direction=dir, anchor=anchor)
+    direction, anchor = get_direction_anchor_from_position(position)
+    draw.text(position_values, txt, fill=color, font=font, direction=direction, anchor=anchor)  # pyre-ignore[6]
 
     txt_new_img = txt_new_img.rotate(rotation)
     combined = Image.alpha_composite(new_img, txt_new_img)
 
     bbox = txt_new_img.getbbox()
-    return combined, bbox, 2
+    if bbox is None:
+        bbox = (0, 0, 0, 0)
+    return combined, bbox, 0
 
 
 def resize_image_bbox(img, bboxes):
+    """
+    Utility function to resize the image and the bounding box
+    """
     bboxes = np.array(bboxes)
-    for i in range(len(bboxes)):
-        bbox = bboxes[i]
+    for _, bbox in enumerate(bboxes):
         bbox[0] = bbox[0] * 224 // img.size[0]
         bbox[1] = bbox[1] * 224 // img.size[1]
         bbox[2] = bbox[2] * 224 // img.size[0]
@@ -228,7 +227,7 @@ def plot_watermark(img, bbox=None):
     """
     Plot the image with the watermark and the bounding box
     """
-    fig, ax = plt.subplots(1)
+    _, ax = plt.subplots(1)
     ax.imshow(img)
     if bbox is not None:
         rect = patches.Rectangle(
@@ -243,32 +242,20 @@ def plot_watermark(img, bbox=None):
     plt.show()
 
 
-def generate_text_watermarks():
-    fonts_names = load_fonts()
-    images = load_images()
-    print("generating text watermarks")
-    X, y = [], []
-    for img in tqdm(images):
-        font_name = np.random.choice(fonts_names)
-        font = ImageFont.truetype(font_name, size=20)
-        combined, txt_img, bbox = add_text_watermark(img, font)
-        combined, bbox = resize_image_bbox(combined, bbox)
-        X.append(np.array(combined))
-        y.append(bbox)
-    X, y = np.array(X), np.array(y)
-    return X, y
-
-
-def remove_background(img: Image.Image):
-    img = np.array(img)
+def remove_background(img_in: Image.Image):
+    """
+    Utility function to remove the background of a logo
+    """
+    img = np.array(img_in)
     if len(img.shape) == 3:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     else:  # if logo is already grayscale
         gray = img
     # threshold input image as mask
     mask = cv2.threshold(gray, 250, 255, cv2.THRESH_BINARY)[1]
-    # negate mask
-    mask = 255 - mask
+    # create an array full of 255, same size of original image
+    white_mask = np.full(mask.shape, 255, dtype=np.uint8)
+    mask = white_mask - mask
     # apply morphology to remove isolated extraneous noise
     # use borderconstant of black since foreground touches the edges
     kernel = np.ones((3, 3), np.uint8)
@@ -290,7 +277,7 @@ def remove_background(img: Image.Image):
 
 def _get_position_for_logo(
     img_width: int, img_height: int, logo_height: int, logo_width: int
-) -> tuple:
+) -> dict[str, Tuple[float, float]]:
     """
     Returns a position between:
     - top left
@@ -362,6 +349,8 @@ def add_logo_watermark(img: Image.Image, logo: Image.Image) -> tuple:
     logo_transformed = Image.new("RGBA", img.size, (0, 0, 0, 0))
     logo_transformed.paste(logo_resized, position_values)
     bbox = logo_resized.getbbox()
+    if bbox is None:
+        bbox = (0, 0, 0, 0)
     bbox = (
         *position_values,
         position_values[0] + bbox[2],
@@ -370,7 +359,7 @@ def add_logo_watermark(img: Image.Image, logo: Image.Image) -> tuple:
 
     new_img = img.copy().convert("RGBA")
     combined = Image.alpha_composite(new_img, logo_transformed)
-    return combined, bbox, 2
+    return combined, bbox, 1
 
 
 # if __name__ == "__main__":
@@ -381,7 +370,7 @@ def add_logo_watermark(img: Image.Image, logo: Image.Image) -> tuple:
 #     # c = _get_color_from_rotation_and_position(pos, rot)
 #     # print(c)
 #     fonts = load_fonts()
-#     img = Image.open("data/pictures/000000000139.jpg")
-#     combined, txt_img, bbox = add_text_watermark(img, fonts[0])
-#     combined, bbox, _ = add_logo_watermark(img, Image.open("data/logos/amazon.jpg"))
+#     img = Image.open("../data/pictures/000000000139.jpg")
+#     # combined, bbox, _ = add_text_watermark(img, fonts[0])
+#     combined, bbox, _ = add_logo_watermark(img, Image.open("../data/logos/amazon.jpg"))
 #     plot_watermark(combined, bbox)
