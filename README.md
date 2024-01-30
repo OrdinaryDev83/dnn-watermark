@@ -46,7 +46,7 @@ We fine-tuned a YoloV8 and DETR model on the dataset we created.
 
 ## TODO
 [ ] handle splits
-[ ] try catch bbox=None
-[ ] resize images
-[ ] add logo dataset
+[X] try catch bbox=None
+[X] resize images
+[X] add logo dataset
 
