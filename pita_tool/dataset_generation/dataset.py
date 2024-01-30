@@ -71,7 +71,7 @@ class PitaDataset:
         Returns:
             Path: The path of the image.
         """
-        return Path(self.dataset_directory) / self.split / f"{image_id}.jpg"
+        return Path(self.dataset_directory) / self.split / image_id
 
     def zip_dataset(self) -> None:
         """

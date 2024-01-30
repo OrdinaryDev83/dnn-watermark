@@ -215,7 +215,7 @@ def add_text_watermark(
     combined = Image.alpha_composite(new_img, txt_new_img)
 
     bbox = txt_new_img.getbbox()
-    return combined, bbox, 0
+    return combined, bbox, 2
 
 
 def resize_image_bbox(img, bboxes):
@@ -369,17 +369,3 @@ def add_logo_watermark(img: Image.Image, logo: Image.Image) -> tuple:
         position_values[1] + bbox[3],
     )
     return combined, bbox, 1
-
-
-# if __name__ == "__main__":
-#     # pos = _get_position(100, 100)
-#     # print(pos)
-#     # rot = _get_rotation_from_position(pos)
-#     # print(rot)
-#     # c = _get_color_from_rotation_and_position(pos, rot)
-#     # print(c)
-#     fonts = load_fonts()
-#     img = Image.open("../data/pictures/000000000139.jpg")
-#     # combined, bbox, _ = add_text_watermark(img, fonts[0])
-#     combined, bbox, _ = add_logo_watermark(img, Image.open("../data/logos/amazon.jpg"))
-#     plot_watermark(combined, bbox)

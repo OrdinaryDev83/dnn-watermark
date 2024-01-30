@@ -1,6 +1,7 @@
 """
 Download the dataset from the given URL and extract the images and annotations.
 """
+import tarfile
 import zipfile
 from glob import glob
 from typing import List
@@ -11,6 +12,7 @@ from pycocotools.coco import COCO
 from .exceptions import NoAnnotationsFileFound
 from .utils import DisablePrint
 
+
 def download_annotations(annotions_url: str, directory_path: str) -> str:
     """
     Download the annotations from the given URL and extract them.
@@ -18,7 +20,7 @@ def download_annotations(annotions_url: str, directory_path: str) -> str:
     Args:
         annotions_url (str): The annotations URL.
         directory_path (str): The directory path.
-    
+
     Returns:
         str: The path to the annotations file.
     """
@@ -61,6 +63,29 @@ def download_images(coco_api: COCO, output_directory: str, images: List[int]) ->
     """
     with DisablePrint():
         coco_api.download(output_directory, images)
+
+
+def download_logos(directory_path: str):
+    """
+    Download the logos from the given URL and extract them.
+
+    Logos coming froms:
+        - QMUL-OpenLogo: Open Logo Detection Challenge Dataset
+            https://hangsu0730.github.io/qmul-openlogo/
+
+    Args:
+        output_directory (str): The output directory.
+    """
+
+    logo_url: str = "https://docs.google.com/uc?export=download&id=1BXlU4aIu5d9f1hZBosZaWYRNzF72UGaj"
+
+    # Download the annotations and extract them
+    tar_path: str = directory_path + "/logo.tar"
+    wget.download(url=logo_url, out=tar_path)
+
+    # Extract the tar file
+    with tarfile.open(tar_path, "r") as tar_ref:
+        tar_ref.extractall(directory_path + "/logos")
 
 
 # def download_images(

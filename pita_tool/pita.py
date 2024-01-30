@@ -57,7 +57,7 @@ def generate():
     pita_dataset : PitaDataset = PitaDataset(
         dataset_directory="data",
         split="train",
-        size=2,
+        size=10,
     )
 
     generate_dataset(pita_dataset)

@@ -4,6 +4,7 @@ Generate dataset with json annotations and images.
 
 import json
 import os
+from logging import getLogger
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Dict, List
@@ -13,16 +14,18 @@ from pycocotools.coco import COCO
 
 from .annotation import Annotation, AnnotationEncoder
 from .dataset import PitaDataset
-from .download_dataset import download_annotations, download_images
-from .watermarks_generator import add_text_watermark, load_fonts
+from .download_dataset import download_annotations, download_images, download_logos
 from .utils import DisablePrint
+from .watermarks_generator import add_logo_watermark, add_text_watermark, load_fonts
+
+logger = getLogger(__name__)
 
 
 def generate_text_watermarked_image(
     coco_api: COCO, idx: int, image_id: int, font: str, image_directory: str
 ) -> None:
     """
-    Generate a watermarked text image.
+    Generate an image with a text watermark.
 
     Args:
         coco_api (COCO): The coco api.
@@ -40,8 +43,36 @@ def generate_text_watermarked_image(
     return watermarked_image.convert("RGB"), bbox, category, image_properties
 
 
-def generate_text_labels(
-    coco_api: COCO, dataset: PitaDataset, image_directory: str
+def generate_logo_watermarked_image(
+    coco_api: COCO,
+    idx: int,
+    image_id: int,
+    image_directory: str,
+    logo_path: str,
+) -> None:
+    """
+    Generate an image with a logo watermark.
+
+    Args:
+        coco_api (COCO): The coco api.
+        idx (int): The image index.
+        image_id (int): The image id.
+        font (str): The font name.
+        image_directory (str): The image directory.
+        logo_directory (str): The logo directory.
+    """
+    image_properties: Dict = coco_api.loadImgs(image_id)[0]
+    image_path: str = image_directory + "/" + str(image_properties["file_name"])
+
+    image_pil: Image = Image.open(image_path)
+    logo_pil: Image = Image.open(logo_path)
+    watermarked_image, bbox, category = add_logo_watermark(image_pil, logo_pil)
+
+    return watermarked_image.convert("RGB"), bbox, category, image_properties
+
+
+def generate_labels(
+    coco_api: COCO, dataset: PitaDataset, image_directory: str, logo_directory: str
 ) -> None:
     """
     Generate the dataset annotations.
@@ -52,26 +83,42 @@ def generate_text_labels(
         image_directory (str): The image directory.
     """
     font_names: List[str] = load_fonts()
+    logo_pathes: List[str] = os.listdir(logo_directory)
 
     with open(dataset.get_metadata_path(), "a") as f:
         for idx, image_id in enumerate(dataset.image_ids):
             font = font_names[idx % len(font_names)]
+            logo_path: str = logo_directory + "/" + logo_pathes[idx % len(logo_pathes)]
 
-            # Generate a text watermarked image and check no issues comming from fonts
             try:
-                (
-                    watermarked_image,
-                    bbox,
-                    category,
-                    image_properties,
-                ) = generate_text_watermarked_image(
-                    coco_api, idx, image_id, font, image_directory
-                )
-            except OSError:
+                if idx % 2 == 0:
+                    (
+                        watermarked_image,
+                        bbox,
+                        category,
+                        image_properties,
+                    ) = generate_logo_watermarked_image(
+                        coco_api, idx, image_id, image_directory, logo_path
+                    )
+                else:
+                    (
+                        watermarked_image,
+                        bbox,
+                        category,
+                        image_properties,
+                    ) = generate_text_watermarked_image(
+                        coco_api,
+                        idx,
+                        image_id,
+                        font,
+                        image_directory,
+                    )
+            except Exception as e:
+                logger.warning(e)
                 continue
 
-            # Text was not correctly added
             if bbox is None:
+                logger.warning("Empty bbox in image %s", image_properties["file_name"])
                 continue
 
             # Create the annotation
@@ -84,7 +131,9 @@ def generate_text_labels(
             )
 
             # Save the image and annotation
-            watermarked_image.save(dataset.get_image_path(idx))
+            watermarked_image.save(
+                dataset.get_image_path(image_properties["file_name"])
+            )
             json.dump(anotation, f, cls=AnnotationEncoder)
 
 
@@ -113,6 +162,14 @@ def generate_dataset(dataset: PitaDataset) -> None:
 
         # Download images in a temporary directory
         image_directory: str = temporary_directory + "/images"
-        download_images(coco_api, image_directory, dataset.image_ids)
+        download_images(
+            coco_api=coco_api,
+            output_directory=image_directory,
+            images=dataset.image_ids,
+        )
 
-        generate_text_labels(coco_api, dataset, image_directory)
+        # Download logo images
+        logo_directory: str = temporary_directory + "/logos/all/"
+        download_logos(directory_path=temporary_directory)
+
+        generate_labels(coco_api, dataset, image_directory, logo_directory)
