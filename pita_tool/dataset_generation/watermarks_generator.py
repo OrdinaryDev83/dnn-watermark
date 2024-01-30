@@ -179,6 +179,19 @@ def get_direction_anchor_from_position(position: dict) -> Tuple[str, str]:
     return "ltr", "lt"
 
 
+def _convert_bbox_to_correct_format(bbox: tuple | None) -> tuple:
+    """
+    Convert (x1, y1, x2, y2) to (x, y, w, h) with x, y the center of the bbox and w, h the width and height
+    """
+    if bbox is None:
+        return None
+    x = (bbox[0] + bbox[2]) // 2
+    y = (bbox[1] + bbox[3]) // 2
+    w = bbox[2] - bbox[0]
+    h = bbox[3] - bbox[1]
+    return x, y, w, h
+
+
 def add_text_watermark(
     img: Image.Image, font_name: str
 ) -> Tuple[Image.Image, tuple | None, int]:
@@ -218,6 +231,7 @@ def add_text_watermark(
     combined = Image.alpha_composite(new_img, txt_new_img)
 
     bbox = txt_new_img.getbbox()
+    bbox = _convert_bbox_to_correct_format(bbox)
     return combined.convert('RGB'), bbox, 2
 
 
@@ -237,6 +251,7 @@ def resize_image_bbox(img, bboxes):
 def plot_watermark(img, bbox=None):
     """
     Plot the image with the watermark and the bounding box
+    FIXME: WILL NOT WORK WITH THE NEW BBOX FORMAT
     """
     _, ax = plt.subplots(1)
     ax.imshow(img)
@@ -374,4 +389,5 @@ def add_logo_watermark(img: Image.Image, logo: Image.Image) -> tuple:
         position_values[0] + bbox[2],
         position_values[1] + bbox[3],
     )
+    bbox = _convert_bbox_to_correct_format(bbox)
     return combined.convert('RGB'), bbox, 1
