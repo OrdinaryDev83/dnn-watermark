@@ -60,6 +60,8 @@ def download() -> None:
 
     generate_dataset(pita_dataset)
 
+    pita_dataset.zip_dataset()
+
 
 @pita.command()
 def generate():

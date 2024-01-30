@@ -31,16 +31,16 @@ class NullIO(StringIO):
         pass
 
 
-def download_annotations(annotions_url: str, directory_path : str) -> List[str]:    
+def download_annotations(annotions_url: str, directory_path: str) -> str:
     zip_path = directory_path + "/anotations.zip"
-    
+
     # Download the annotations and extract them
     wget.download(annotions_url, out=zip_path)
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(directory_path)
 
     annotations_json: List[str] = glob(f"{directory_path}/**/*.json")
-    
+
     # Check if there are annotations in the directory
     if len(annotations_json) == 0:
         raise NoAnnotationsFileFound("No annotations file found.")
@@ -58,6 +58,7 @@ def download_image(coco_api: COCO, dataset_directory: str, image_id: List[int]) 
         image_id (int): The image id.
     """
     coco_api.download(dataset_directory, image_id)
+
 
 def download_images(
     coco_api: COCO, dataset_directory: str, images: List[int], n_jobs: int = -1
