@@ -67,6 +67,10 @@ def download(split: str, data_dir: str, format : str) -> None:
     split_directory = data_dir + f"/{huffing_face_split}"
     wget.download(train_dataset, out=zip_split_directory)
 
+    if format == "yolo":
+        # Download the metadata
+        wget.download("https://huggingface.co/datasets/bastienp/visible-watermark-pita/resolve/main/data/metadata.yml?download=true")
+
     # Extract the dataset split
     with zipfile.ZipFile(zip_split_directory, "r") as zip_ref:
         zip_ref.extractall(split_directory)
