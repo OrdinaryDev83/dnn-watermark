@@ -14,7 +14,11 @@ from pycocotools.coco import COCO
 
 from .annotation import Annotation, AnnotationEncoder
 from .dataset import PitaDataset
-from .download_dataset import download_annotations, download_images, download_logos
+from .download_dataset import (
+    download_annotations,
+    download_images,
+    download_logos,
+)
 from .utils import DisablePrint
 from .watermarks_generator import add_logo_watermark, add_text_watermark, load_fonts
 
