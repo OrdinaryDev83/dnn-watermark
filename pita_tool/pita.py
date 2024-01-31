@@ -33,7 +33,7 @@ def download_from_hub(split_name: str, data_dir: str, format: str) -> None:
     zip_split_directory = data_dir + f"/{split_name}.zip"
     wget.download(train_dataset, out=zip_split_directory)
 
-    if format == "yolo" and not os.path.exists("metadata.yml"):
+    if format == "yolo" and not os.path.exists(f"{data_dir}/metadata.yml"):
         wget.download(
             "https://huggingface.co/datasets/bastienp/visible-watermark-pita/resolve/main/data/metadata.yml?download=true",
             out=f"{data_dir}/metadata.yml",
@@ -75,7 +75,7 @@ def download(split: str, data_dir: str, format: str) -> None:
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
 
-    if split not in ["train", "validation", "test", "all"]:
+    if split not in ["train", "val", "test", "all"]:
         click.echo(f"The split {split} is not valid.")
         return
 
@@ -88,7 +88,7 @@ def download(split: str, data_dir: str, format: str) -> None:
         return
 
     if split == "all":
-        for split_name in ["train", "val", "test"]:
+        for split_name in ["train-yolo", "val-yolo", "test-yolo"]:
             download_from_hub(split_name=split_name, data_dir=data_dir, format=format)
     else:
         download_from_hub(split_name=huffing_face_split, data_dir=data_dir, format=format)
