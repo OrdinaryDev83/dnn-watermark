@@ -75,7 +75,7 @@ def download(split: str, data_dir: str, format: str) -> None:
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
 
-    if split not in ["train", "validation", "test"]:
+    if split not in ["train", "validation", "test", "all"]:
         click.echo(f"The split {split} is not valid.")
         return
 
@@ -87,7 +87,12 @@ def download(split: str, data_dir: str, format: str) -> None:
         click.echo(f"The format {format} is not valid.")
         return
 
-    download_from_hub(split_name=huffing_face_split, data_dir=data_dir, format=format)
+    if split == "all":
+        for split_name in ["train", "val", "test"]:
+            download_from_hub(split_name=split_name, data_dir=data_dir, format=format)
+    else:
+        download_from_hub(split_name=huffing_face_split, data_dir=data_dir, format=format)
+    
 
 
 @pita.command()
