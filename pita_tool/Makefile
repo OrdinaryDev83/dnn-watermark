@@ -1,7 +1,7 @@
 pita-default-config:
-	python3 pita.py generate --size 30 --split test
-	python3 pita.py generate --size 20 --split val
-	python3 pita.py generate --size 100 --split train
+	python3 pita.py generate --size 4000 --split test
+	python3 pita.py generate --size 3200 --split val
+	python3 pita.py generate --size 12800 --split train
 
 pita-yolo-config:
 	python3 pita.py generate --size 30 --split test --format yolo

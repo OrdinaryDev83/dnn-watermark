@@ -59,7 +59,7 @@ def pita() -> None:
 @click.option(
     "--data_dir",
     "-d",
-    default="output_dataset",
+    default="data",
     help="The directory of the dataset.",
     type=str,
 )
