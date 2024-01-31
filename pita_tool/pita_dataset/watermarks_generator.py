@@ -13,6 +13,7 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+
 from .utils import resize_image
 
 
@@ -206,7 +207,7 @@ def add_text_watermark(
         tuple: The image with the watermark, the bbox, the category
 
     """
-    
+
     img = resize_image(img, 512, 512)
     w, h = img.size
 
@@ -232,20 +233,7 @@ def add_text_watermark(
 
     bbox = txt_new_img.getbbox()
     bbox = _convert_bbox_to_correct_format(bbox)
-    return combined.convert('RGB'), bbox, 2
-
-
-def resize_image_bbox(img, bboxes):
-    """
-    Utility function to resize the image and the bounding box
-    """
-    bboxes = np.array(bboxes)
-    for _, bbox in enumerate(bboxes):
-        bbox[0] = bbox[0] * 224 // img.size[0]
-        bbox[1] = bbox[1] * 224 // img.size[1]
-        bbox[2] = bbox[2] * 224 // img.size[0]
-        bbox[3] = bbox[3] * 224 // img.size[1]
-    return img.resize((224, 224)), bboxes
+    return combined.convert("RGB"), bbox, 2
 
 
 def plot_watermark(img, bbox=None):
@@ -298,6 +286,7 @@ def remove_background(img_in: Image.Image):
     result = img.copy()
     result = cv2.cvtColor(result, cv2.COLOR_BGR2BGRA)
     result[:, :, 3] = mask
+
     return Image.fromarray(result, "RGBA")
 
 
@@ -314,6 +303,7 @@ def _get_position_for_logo(
     With a padding of 10% of the image size
     """
     padding = 0.05
+
     positions = [
         {"top_left": (img_width * padding, img_height * padding)},  # top left
         {
@@ -338,6 +328,7 @@ def _get_position_for_logo(
             )
         },  # middle
     ]
+
     return np.random.choice(positions)
 
 
@@ -350,21 +341,25 @@ def add_logo_watermark(img: Image.Image, logo: Image.Image) -> tuple:
     Returns:
         tuple: combined image, logo bbox, category
     """
- 
+
     img = resize_image(img, 512, 512)
     w, h = img.size
-    
+
     logo = remove_background(logo)
     max_logo_size = np.random.uniform(0.3, 0.6)
+
     scale_factor: int = (
         max_logo_size / max(logo.width, logo.height) * min(img.width, img.height)
     )
+
     logo_resized = logo.resize(
         (int(logo.width * scale_factor), int(logo.height * scale_factor))
     )
+
     position: dict = _get_position_for_logo(
         w, h, logo_resized.height, logo_resized.width
     )
+
     rotation: int = _get_rotation_from_position(position)
     position_values = position[list(position.keys())[0]]
     position_values = int(position_values[0]), int(position_values[1])
@@ -384,10 +379,12 @@ def add_logo_watermark(img: Image.Image, logo: Image.Image) -> tuple:
 
     if bbox is None:
         return combined, None, 1
+
     bbox = (
         *position_values,
         position_values[0] + bbox[2],
         position_values[1] + bbox[3],
     )
     bbox = _convert_bbox_to_correct_format(bbox)
-    return combined.convert('RGB'), bbox, 1
+
+    return combined.convert("RGB"), bbox, 1

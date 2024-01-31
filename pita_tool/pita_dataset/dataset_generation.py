@@ -21,6 +21,7 @@ from .download_dataset import (
 )
 from .utils import DisablePrint
 from .watermarks_generator import add_logo_watermark, add_text_watermark, load_fonts
+from .yolo_annotations import convert_to_YOLO, generate_YOLO_config
 
 logger = getLogger(__name__)
 
@@ -134,11 +135,24 @@ def generate_labels(
                 category_id=category,
             )
 
-            # Save the image and annotation
-            watermarked_image.save(
-                dataset.get_image_path(image_properties["file_name"])
-            )
-            json.dump(anotation, f, cls=AnnotationEncoder)
+            if dataset.dataset_format == "coco":
+                # Save the image and annotation
+                watermarked_image.save(
+                    dataset.get_image_path(image_properties["file_name"])
+                )
+                json.dump(anotation, f, cls=AnnotationEncoder)
+
+            if dataset.dataset_format == "yolo":
+                convert_to_YOLO(
+                    annotation=anotation,
+                    dataset=dataset,
+                    watermarked_image=watermarked_image,
+                )
+
+                generate_YOLO_config(
+                    dataset_directory=dataset.dataset_directory,
+                    metadata_yml="metadata.yml",
+                )
 
 
 def generate_dataset(dataset: PitaDataset) -> None:
@@ -171,6 +185,7 @@ def generate_dataset(dataset: PitaDataset) -> None:
             coco_api=coco_api,
             output_directory=image_directory,
             images=dataset.image_ids,
+            verbose=True,
         )
 
         # Download logo images
