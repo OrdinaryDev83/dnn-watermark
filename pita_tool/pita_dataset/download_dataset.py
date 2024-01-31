@@ -1,9 +1,12 @@
 """
 Download the dataset from the given URL and extract the images and annotations.
 """
+import os
 import tarfile
+import threading
 import zipfile
 from glob import glob
+from threading import Thread
 from typing import List
 
 import wget
@@ -38,18 +41,6 @@ def download_annotations(annotions_url: str, directory_path: str) -> str:
         raise NoAnnotationsFileFound("No annotations file found.")
 
     return annotations_json[0]
-
-
-def download_image(coco_api: COCO, dataset_directory: str, image_id: int) -> None:
-    """
-    Download one image.
-
-    Args:
-        coco_api (COCO): The coco api.
-        dataset_directory (str): The dataset directory.
-        image_id (int): The image id.
-    """
-    coco_api.download(dataset_directory, [image_id])
 
 
 def download_images(coco_api: COCO, output_directory: str, images: List[int]) -> None:
@@ -88,36 +79,35 @@ def download_logos(directory_path: str):
         tar_ref.extractall(directory_path + "/logos")
 
 
-# def download_images(
-#     coco_api: COCO, dataset_directory: str, images: List[int], n_jobs: int = -1
+# def threaded_download_images(
+#     coco_api: COCO, output_directory: str, images: List[int], n_jobs: int = -1
 # ) -> None:
 #     """
-#     Download multiple images with multiple threads.
-#     """
-#     # Check if images are already downloaded
-#     current_images: List[str] = glob(f"{dataset_directory}/**/*.jpg", recursive=True)
-#     if len(current_images) >= len(images):
-#         print("Images already downloaded.")
-#         return
+#     Download multiple images using multiple threads.
 
-#     # Download the images
-#     print("Downloading images...")
+#     Args:
+#         coco_api (COCO): The coco api.
+#         output_directory (str): The output directory.
+#         images (List[int]): The images ids.
+#         n_jobs (int): The number of threads to use.
+
+#     """
 #     n_jobs: int = os.cpu_count() if n_jobs == -1 else n_jobs
 #     images_per_job: int = len(images) // n_jobs
 
 #     # Multiple threads
-#     threads = []
+#     threads: List[Thread] = []
 #     for i in range(n_jobs):
-#         start_index = i * images_per_job
-#         end_index = (i + 1) * images_per_job
+#         start_index: int = i * images_per_job
+#         end_index: int = (i + 1) * images_per_job
 
 #         # Last job
 #         if i == n_jobs - 1:
 #             end_index = len(images)
 
 #         t = threading.Thread(
-#             target=download_image,
-#             args=(coco_api, dataset_directory, images[start_index:end_index]),
+#             target=download_images,
+#             args=(coco_api, output_directory, images[start_index:end_index]),
 #         )
 #         threads.append(t)
 #         t.start()
