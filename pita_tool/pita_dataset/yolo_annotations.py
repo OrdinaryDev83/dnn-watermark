@@ -1,4 +1,3 @@
-import json
 import os
 from dataclasses import dataclass
 from typing import Dict
@@ -71,4 +70,4 @@ def generate_YOLO_config(dataset_directory: str, metadata_yml: str) -> None:
     )
 
     with open(f"{dataset_directory}/{metadata_yml}", "w") as f:
-        yaml.dump(yolo_pita_config, f, default_flow_style=False)
+        yaml.dump(yolo_pita_config.__dict__, f, default_flow_style=False)
