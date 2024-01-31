@@ -5,10 +5,15 @@ PitaDataset class
 import os
 from pathlib import Path
 from shutil import rmtree
+from typing import Tuple
 from zipfile import ZipFile
 
 
 class PitaDataset:
+    TRAIN_RANGE: Tuple[int, int] = (0, 73_500)
+    VAL_RANGE: Tuple[int, int] = (73_500, 98_000)
+    TEST_RANGE: Tuple[int, int] = (98_00, 123_000)
+
     dataset_directory: str
     split: str
     metadata_file: str
@@ -84,3 +89,26 @@ class PitaDataset:
 
         # remove the unzipped directory
         rmtree(self.get_path())
+
+    def split_indexes(self, split_name: str) -> Tuple[int, int]:
+        """
+        Get the indexes of the split.
+
+        Returns:
+            Tuple[int, int]: The indexes of the split (start, end).
+        """
+        # check if split is valid
+        if split_name == "train":
+            if (self.size > self.TRAIN_RANGE[1] - self.TRAIN_RANGE[0]):
+                raise ValueError(f"Size {self.size} is larger than train size {self.TRAIN_RANGE[1]}")
+            return self.TRAIN_RANGE[0], self.TRAIN_RANGE[0] + self.size
+
+        if split_name == "val":
+            if (self.size > self.VAL_RANGE[1] - self.VAL_RANGE[0]):
+                raise ValueError(f"Size {self.size} is larger than val size {self.VAL_RANGE[1]}")
+            return self.VAL_RANGE[0], self.VAL_RANGE[0] + self.size
+
+        if split_name == "test":
+            if (self.size > self.TEST_RANGE[1] - self.TEST_RANGE[0]):
+                raise ValueError(f"Size {self.size} is larger than test size {self.TEST_RANGE[1]}")
+            return self.TEST_RANGE[0], self.TEST_RANGE[0] + self.size

@@ -85,7 +85,7 @@ def generate(dataset_directory: str, split: str, size: int, push_to_hub: bool) -
     # Create the dataset directory if it does not exist
     if push_to_hub:
         set_hugging_face_token()
-        hf_repository = create_pita_repository(
+        hf_repository: HfPitaRepository = create_pita_repository(
             dataset_directory=dataset_directory
         )
 
