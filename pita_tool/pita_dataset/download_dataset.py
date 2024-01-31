@@ -43,7 +43,9 @@ def download_annotations(annotions_url: str, directory_path: str) -> str:
     return annotations_json[0]
 
 
-def download_images(coco_api: COCO, output_directory: str, images: List[int]) -> None:
+def download_images(
+    coco_api: COCO, output_directory: str, images: List[int], verbose: bool = True
+) -> None:
     """
     Download multiple images.
 
@@ -52,8 +54,12 @@ def download_images(coco_api: COCO, output_directory: str, images: List[int]) ->
         output_directory (str): The output directory.
         images (List[int]): The images ids.
     """
-    with DisablePrint():
+
+    if verbose:
         coco_api.download(output_directory, images)
+    else:
+        with DisablePrint():
+            coco_api.download(output_directory, images)
 
 
 def download_logos(directory_path: str):

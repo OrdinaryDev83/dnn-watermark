@@ -35,7 +35,10 @@ def pita() -> None:
     help="The directory of the dataset.",
     type=str,
 )
-def download(split: str, data_dir: str) -> None:
+@click.option(
+    "--format", "-f", required=True, help="The format of the dataset.", type=str
+)
+def download(split: str, data_dir: str, format : str) -> None:
     """Download the pita dataset from HuggingFace Datasets without generating it."""
 
     click.echo("Downloading the pita dataset from HuggingFace storage...")
@@ -49,10 +52,19 @@ def download(split: str, data_dir: str) -> None:
         click.echo(f"The split {split} is not valid.")
         return
 
+    if format == "coco":
+        huffing_face_split = split
+    elif format == "yolo":
+        huffing_face_split = split + "-yolo"
+    else :
+        click.echo(f"The format {format} is not valid.")
+        return
+
+
     # Download the dataset
-    train_dataset = f"https://huggingface.co/datasets/bastienp/visible-watermark-pita/resolve/main/data/{split}.zip?download=true"
-    zip_split_directory = data_dir + f"/{split}.zip"
-    split_directory = data_dir + f"/{split}"
+    train_dataset = f"https://huggingface.co/datasets/bastienp/visible-watermark-pita/resolve/main/data/{huffing_face_split}.zip?download=true"
+    zip_split_directory = data_dir + f"/{huffing_face_split}.zip"
+    split_directory = data_dir + f"/{huffing_face_split}"
     wget.download(train_dataset, out=zip_split_directory)
 
     # Extract the dataset split
@@ -78,7 +90,10 @@ def download(split: str, data_dir: str) -> None:
     is_flag=True,
     help="Push the dataset to HuggingFace.",
 )
-def generate(dataset_directory: str, split: str, size: int, push_to_hub: bool) -> None:
+@click.option(
+    "-f", "--format", default="coco", help="The format of the dataset.", type=str
+)
+def generate(dataset_directory: str, split: str, size: int, push_to_hub: bool, format : str) -> None:
     """Generate the pita dataset from COCO and logos from QMUL-OpenLogo."""
     click.echo("Generating the pita dataset ...")
 
@@ -94,6 +109,7 @@ def generate(dataset_directory: str, split: str, size: int, push_to_hub: bool) -
         dataset_directory=dataset_directory,
         split=split,
         size=size,
+        dataset_format=format,
     )
 
     generate_dataset(dataset=pita_dataset)
