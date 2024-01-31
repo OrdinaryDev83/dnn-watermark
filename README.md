@@ -38,15 +38,9 @@ We worked on multiple properties of the watermarks:
 ## Model
 
 We fine-tuned a YoloV8 and DETR model on the dataset we created.
-- YoloV8 -> PyTorch
-- DETR -> PyTorch (https://www.kaggle.com/code/shnakazawa/object-detection-with-pytorch-and-detr#Define-Model-Components)
-- DinoV2
-- Retina Net -> PyTorch
-- Faster R-CNN -> PyTorch
-
-## TODO
-[ ] handle splits
-[X] try catch bbox=None
-[X] resize images
-[X] add logo dataset
-
+[X] YoloV8
+[X] DETR w/ ResNet backbone
+[ ] DETR w/ DinoV2 backbone
+[ ] FocalNet
+[ ] Masked R-CNN
+[ ] Faster R-CNN
