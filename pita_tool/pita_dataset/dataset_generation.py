@@ -158,7 +158,8 @@ def generate_dataset(dataset: PitaDataset) -> None:
         with DisablePrint():
             coco_api: COCO = COCO(annotation_file)
 
-        dataset.image_ids = coco_api.getImgIds()[: dataset.size]
+        start_index, end_index = dataset.split_indexes(dataset.split)
+        dataset.image_ids = coco_api.getImgIds()[start_index:end_index]
 
         # Download images in a temporary directory
         image_directory: str = temporary_directory + "/images"
