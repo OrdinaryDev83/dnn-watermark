@@ -318,6 +318,6 @@ pyrightconfig.json
 .history
 .ionide
 
-lightning_logs/
-runs/
+lightning_logs
 *.pt
+runs/
