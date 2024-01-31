@@ -18,6 +18,34 @@ from pita_dataset import (
 )
 
 
+def download_from_hub(split_name: str, data_dir: str, format: str) -> None:
+    """
+    Download the dataset from HuggingFace Hub.
+
+    Args:
+        split_name (str): The split name of the dataset.
+        data_dir (str): The directory of the dataset.
+        format (str): The format of the dataset.
+    """
+
+    # Download the dataset
+    train_dataset = f"https://huggingface.co/datasets/bastienp/visible-watermark-pita/resolve/main/data/{split_name}.zip?download=true"
+    zip_split_directory = data_dir + f"/{split_name}.zip"
+    wget.download(train_dataset, out=zip_split_directory)
+
+    if format == "yolo" and not os.path.exists("metadata.yml"):
+        wget.download(
+            "https://huggingface.co/datasets/bastienp/visible-watermark-pita/resolve/main/data/metadata.yml?download=true",
+            out=f"{data_dir}/metadata.yml",
+        )
+
+    # Extract the dataset split
+    with zipfile.ZipFile(zip_split_directory, "r") as zip_ref:
+        zip_ref.extractall(data_dir)
+
+    os.remove(zip_split_directory)
+
+
 @click.group()
 def pita() -> None:
     """A CLI for the to generata and download pita dataset watermark object detection dataset."""
@@ -38,7 +66,7 @@ def pita() -> None:
 @click.option(
     "--format", "-f", required=True, help="The format of the dataset.", type=str
 )
-def download(split: str, data_dir: str, format : str) -> None:
+def download(split: str, data_dir: str, format: str) -> None:
     """Download the pita dataset from HuggingFace Datasets without generating it."""
 
     click.echo("Downloading the pita dataset from HuggingFace storage...")
@@ -47,7 +75,6 @@ def download(split: str, data_dir: str, format : str) -> None:
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
 
-    # Check if the split is valid
     if split not in ["train", "validation", "test"]:
         click.echo(f"The split {split} is not valid.")
         return
@@ -56,26 +83,11 @@ def download(split: str, data_dir: str, format : str) -> None:
         huffing_face_split = split
     elif format == "yolo":
         huffing_face_split = split + "-yolo"
-    else :
+    else:
         click.echo(f"The format {format} is not valid.")
         return
 
-
-    # Download the dataset
-    train_dataset = f"https://huggingface.co/datasets/bastienp/visible-watermark-pita/resolve/main/data/{huffing_face_split}.zip?download=true"
-    zip_split_directory = data_dir + f"/{huffing_face_split}.zip"
-    split_directory = data_dir + f"/{huffing_face_split}"
-    wget.download(train_dataset, out=zip_split_directory)
-
-    if format == "yolo":
-        # Download the metadata
-        wget.download("https://huggingface.co/datasets/bastienp/visible-watermark-pita/resolve/main/data/metadata.yml?download=true")
-
-    # Extract the dataset split
-    with zipfile.ZipFile(zip_split_directory, "r") as zip_ref:
-        zip_ref.extractall(split_directory)
-
-    os.remove(zip_split_directory)
+    download_from_hub(split_name=huffing_face_split, data_dir=data_dir, format=format)
 
 
 @pita.command()
@@ -97,7 +109,9 @@ def download(split: str, data_dir: str, format : str) -> None:
 @click.option(
     "-f", "--format", default="coco", help="The format of the dataset.", type=str
 )
-def generate(dataset_directory: str, split: str, size: int, push_to_hub: bool, format : str) -> None:
+def generate(
+    dataset_directory: str, split: str, size: int, push_to_hub: bool, format: str
+) -> None:
     """Generate the pita dataset from COCO and logos from QMUL-OpenLogo."""
     click.echo("Generating the pita dataset ...")
 
