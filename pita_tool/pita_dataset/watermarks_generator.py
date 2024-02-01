@@ -211,7 +211,7 @@ def add_text_watermark(
     img = resize_image(img, 512, 512)
     w, h = img.size
 
-    txt: str = generate_random_string(np.random.randint(8, 15))
+    txt: str = generate_random_string(np.random.randint(8, 9))
     size: int = np.random.randint(30, min(w, h) // 5)
     position: dict = _get_position(w, h, size)
     rotation: int = _get_rotation_from_position(position)

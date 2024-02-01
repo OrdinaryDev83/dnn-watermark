@@ -11,8 +11,8 @@ from zipfile import ZipFile
 
 class PitaDataset:
     TRAIN_RANGE: Tuple[int, int] = (0, 73_500)
-    VAL_RANGE: Tuple[int, int] = (73_500, 98_000)
-    TEST_RANGE: Tuple[int, int] = (98_00, 123_000)
+    VAL_RANGE: Tuple[int, int] = (73_501, 98_000)
+    TEST_RANGE: Tuple[int, int] = (98_001, 123_000)
 
     dataset_directory: str
     split: str

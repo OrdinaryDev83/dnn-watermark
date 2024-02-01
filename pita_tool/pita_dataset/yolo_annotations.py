@@ -59,7 +59,7 @@ def convert_to_YOLO(
 def generate_YOLO_config(dataset_directory: str, metadata_yml: str) -> None:
     yolo_pita_config = YOLOConfig(
         path=dataset_directory,
-    train="train-yolo/images",
+        train="train-yolo/images",
         val="val-yolo/images",
         test="test-yolo/images",
         names={

@@ -1,12 +1,9 @@
 """
 Download the dataset from the given URL and extract the images and annotations.
 """
-import os
 import tarfile
-import threading
 import zipfile
 from glob import glob
-from threading import Thread
 from typing import List
 
 import wget

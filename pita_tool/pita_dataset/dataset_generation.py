@@ -8,6 +8,7 @@ from logging import getLogger
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Dict, List
+from tqdm import tqdm
 
 from PIL import Image
 from pycocotools.coco import COCO
@@ -91,7 +92,7 @@ def generate_labels(
     logo_pathes: List[str] = os.listdir(logo_directory)
 
     with open(dataset.get_metadata_path(), "a") as f:
-        for idx, image_id in enumerate(dataset.image_ids):
+        for idx, image_id in enumerate(tqdm(dataset.image_ids, desc="Generating watermarks")):
             font = font_names[idx % len(font_names)]
             logo_path: str = logo_directory + "/" + logo_pathes[idx % len(logo_pathes)]
 
@@ -119,11 +120,11 @@ def generate_labels(
                         image_directory,
                     )
             except Exception as e:
-                logger.warning(e)
+                # logger.warning(e)
                 continue
 
             if bbox is None:
-                logger.warning("Empty bbox in image %s", image_properties["file_name"])
+                # logger.warning("Empty bbox in image %s", image_properties["file_name"])
                 continue
 
             # Create the annotation
@@ -155,7 +156,7 @@ def generate_labels(
                 )
 
 
-def generate_dataset(dataset: PitaDataset) -> None:
+def generate_dataset(dataset: PitaDataset, images_path : str = None) -> None:
     """
     Generate a dataset from a PitaDataset object.
 
@@ -179,14 +180,18 @@ def generate_dataset(dataset: PitaDataset) -> None:
         start_index, end_index = dataset.split_indexes(dataset.split)
         dataset.image_ids = coco_api.getImgIds()[start_index:end_index]
 
-        # Download images in a temporary directory
-        image_directory: str = temporary_directory + "/images"
-        download_images(
-            coco_api=coco_api,
-            output_directory=image_directory,
-            images=dataset.image_ids,
-            verbose=True,
-        )
+
+        if images_path is None:
+            # Download images in a temporary directory
+            image_directory: str = temporary_directory + "/images"
+            download_images(
+                coco_api=coco_api,
+                output_directory=image_directory,
+                images=dataset.image_ids,
+                verbose=True,
+            )
+        else:
+            image_directory = images_path
 
         # Download logo images
         logo_directory: str = temporary_directory + "/logos/all/"

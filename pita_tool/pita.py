@@ -91,8 +91,9 @@ def download(split: str, data_dir: str, format: str) -> None:
         for split_name in ["train-yolo", "val-yolo", "test-yolo"]:
             download_from_hub(split_name=split_name, data_dir=data_dir, format=format)
     else:
-        download_from_hub(split_name=huffing_face_split, data_dir=data_dir, format=format)
-    
+        download_from_hub(
+            split_name=huffing_face_split, data_dir=data_dir, format=format
+        )
 
 
 @pita.command()
@@ -114,11 +115,17 @@ def download(split: str, data_dir: str, format: str) -> None:
 @click.option(
     "-f", "--format", default="coco", help="The format of the dataset.", type=str
 )
+@click.option("--images-path", default=None, required=False, help="The path to the images.", type=str)
 def generate(
-    dataset_directory: str, split: str, size: int, push_to_hub: bool, format: str
+    dataset_directory: str,
+    split: str,
+    size: int,
+    push_to_hub: bool,
+    format: str,
+    images_path: str,
 ) -> None:
     """Generate the pita dataset from COCO and logos from QMUL-OpenLogo."""
-    click.echo("Generating the pita dataset ...")
+    click.echo("Start generating the pita dataset...")
 
     # Create the dataset directory if it does not exist
     if push_to_hub:
@@ -135,7 +142,7 @@ def generate(
         dataset_format=format,
     )
 
-    generate_dataset(dataset=pita_dataset)
+    generate_dataset(dataset=pita_dataset, images_path=images_path)
 
     if push_to_hub:
         push_to_hugging_face(hf_repository=hf_repository)

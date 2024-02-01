@@ -1,12 +1,12 @@
 pita-default-config:
-	python3 pita.py generate --size 4000 --split test
-	python3 pita.py generate --size 3200 --split val
-	python3 pita.py generate --size 12800 --split train
+	python3 pita.py generate --size 12800 --format coco --split train --images-path unlabeled2017/
+	python3 pita.py generate --size 4000 --format coco --split val --images-path unlabeled2017/
+	python3 pita.py generate --size 3200 --format coco --split test --images-path unlabeled2017/
 
 pita-yolo-config:
-	python3 pita.py generate --size 30 --split test --format yolo
-	python3 pita.py generate --size 20 --split val --format yolo
-	python3 pita.py generate --size 100 --split train --format yolo
+	python3 pita.py generate --size 12800 --format yolo --split train --images-path unlabeled2017/
+	python3 pita.py generate --size 4000 --format yolo --split val --images-path unlabeled2017/
+	python3 pita.py generate --size 3200 --format yolo --split test --images-path unlabeled2017/
 
 clean:
 	rm -rf data/
