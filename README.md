@@ -38,9 +38,9 @@ We worked on multiple properties of the watermarks:
 ## Model
 
 We fine-tuned a YoloV8 and DETR model on the dataset we created.
-[X] YoloV8
-[X] DETR w/ ResNet backbone
-[ ] DETR w/ DinoV2 backbone
-[ ] FocalNet
-[ ] Masked R-CNN
-[ ] Faster R-CNN
+- [X] YoloV8
+- [X] DETR w/ ResNet backbone
+- [ ] DETR w/ DinoV2 backbone
+- [ ] FocalNet
+- [ ] Masked R-CNN
+- [ ] Faster R-CNN
