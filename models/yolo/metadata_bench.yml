@@ -1,0 +1,7 @@
+names:
+  0: logo
+  1: text
+nc: 2
+path: /kaggle/working/data
+train: train-yolo/images
+val: test-yolo/images
