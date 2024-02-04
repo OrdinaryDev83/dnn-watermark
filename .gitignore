@@ -321,3 +321,7 @@ pyrightconfig.json
 lightning_logs/
 runs/
 *.pt
+
+.DS_Store
+*.zip
+train-yolo/
