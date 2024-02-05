@@ -57,3 +57,9 @@ You can find the results and the paper explaining our work in the `report` folde
 A demo using our fine-tuned YoloV8 Nano model is available on a Hugging Face Space here: https://huggingface.co/spaces/qfisch/watermark-detection
 
 Note: We were enable to correctly benchmark DETR, thus we decided to not include any result for this model.
+
+
+### Weights & Biases
+
+- Faster R-CNN training: https://api.wandb.ai/links/qfisch/g7jzfptj
+- YoloV8 (Large, similar for nano) training: https://api.wandb.ai/links/qfisch/ni8916bg
