@@ -55,4 +55,5 @@ PITA fine-tuned YoloV8 Nano model is available on Hugging Face too at: https://h
 
 You can find the results and the paper explaining our work in the `report` folder.
 A demo using our fine-tuned YoloV8 Nano model is available on a Hugging Face Space here: https://huggingface.co/spaces/qfisch/watermark-detection
+
 Note: We were enable to correctly benchmark DETR, thus we decided to not include any result for this model.
